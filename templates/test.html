@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+  <head>
+  	
+
+  </head>
+  <body onload="init();">
+  	 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+  	 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  	 <style type="text/css">
+		 #form1 {
+
+		display:none;
+
+		}
+  	 </style>>
+  	 <script>
+      //--------------------
+      // GET USER MEDIA CODE
+      //--------------------
+          navigator.getUserMedia = ( navigator.getUserMedia ||
+                             navigator.webkitGetUserMedia ||
+                             navigator.mozGetUserMedia ||
+                             navigator.msGetUserMedia);
+
+      var video;
+      var webcamStream;
+
+      function startWebcam() {
+        if (navigator.getUserMedia) {
+           navigator.getUserMedia (
+
+              // constraints
+              {
+                 video: true,
+                 audio: false
+              },
+
+              // successCallback
+              function(localMediaStream) {
+                  video = document.querySelector('video');
+                 video.src = window.URL.createObjectURL(localMediaStream);
+                 webcamStream = localMediaStream;
+              },
+
+              // errorCallback
+              function(err) {
+                 console.log("The following error occured: " + err);
+              }
+           );
+        } else {
+           console.log("getUserMedia not supported");
+        }  
+      }
+
+      function stopWebcam() {
+          webcamStream.stop();
+      }
+      //---------------------
+      // TAKE A SNAPSHOT CODE
+      //---------------------
+      var canvas, ctx;
+
+      function init() {
+        // Get the canvas and obtain a context for
+        // drawing in it
+        canvas = document.getElementById("myCanvas");
+        ctx = canvas.getContext('2d');
+      }
+
+      function snapshot() {
+         // Draws current image from the video element into the canvas
+        ctx.drawImage(video, 0,0, canvas.width, canvas.height);
+        var Pic = document.getElementById("myCanvas").toDataURL("image/png");
+        Pic = Pic.replace(/^data:image\/(png|jpg);base64,/, "")
+        document.getElementById("textArea").value = "ff";
+         // Sending the image data to Servers
+       $.ajax({
+        type: 'POST',
+        url: 'Save_Picture.aspx/UploadPic',
+        data: '{ "imageData" : "' + Pic + '" }',
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        success: function (msg) {
+            alert("Done, Picture Uploaded.");
+            console.log(msg);
+            //console.log("asda" + data);
+  
+        },
+        error: function(xhr, status, error) {
+			  //var err = eval("(" + xhr.responseText + ")");
+			  //alert(error);
+			  console.log(xhr);
+			  console.log(status);
+			  console.log(error);
+			   $("#form1").toggle();
+			}
+    
+       });
+      }
+
+      // this is the id of the form
+$("#form1").submit(function(e) {
+    var form = $(this);
+    $.ajax({
+           type: "POST",
+           url: 'Save_Picture.aspx/UploadPic',
+           data: form.serialize(), // serializes the form's elements.
+           success: function(data)
+           {
+               alert(data); // show response from the php script.
+           }
+           error: function(d) {
+			  //var err = eval("(" + xhr.responseText + ")");
+			  //alert(error);
+			  console.log(d);
+			  //console.log(status);
+			  //console.log(error);
+			  alert('could not add new registrations')
+			   //$("#form1").toggle();
+			}
+         });
+});
+
+  </script>
+    <h1>Take a snapshot of the current video stream</h1>
+   Click on the Start WebCam button.
+
+     <p>
+    <button onclick="startWebcam();">Start WebCam</button>
+    <button onclick="stopWebcam();">Stop WebCam</button> 
+       <button onclick="snapshot();">Take Snapshot</button> 
+        <textarea id="textArea"></textarea>
+        <form id="form1">
+           <b>First Name:</b> <input id="name" type="text" name="firstName">
+             <button type="button" id="submit">Submit</button>
+        </form>
+    </p>
+
+   
+    <video onclick="snapshot(this);" width=800 height=600 id="video" float="left" controls autoplay></video>
+    
+
+  <p>
+
+        Last Screenshot : <p>
+      <canvas  id="myCanvas" width="800" height="600"></canvas>  
+  </body>
+  
+</html>

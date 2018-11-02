@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+  <head>
+  	
+
+  </head>
+  <body class="bg-dark" onload="init();">
+  	 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+  	 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  	 <style type="text/css">
+		 #form1 {
+
+		display:none;
+
+		}
+  	 </style>
+  	 <script>
+      //--------------------
+      // GET USER MEDIA CODE
+      //--------------------
+          navigator.getUserMedia = ( navigator.getUserMedia ||
+                             navigator.webkitGetUserMedia ||
+                             navigator.mozGetUserMedia ||
+                             navigator.msGetUserMedia);
+
+      var video;
+      var webcamStream;
+
+      function startWebcam() {
+        if (navigator.getUserMedia) {
+           navigator.getUserMedia (
+
+              // constraints
+              {
+                 video: true,
+                 audio: false
+              },
+
+              // successCallback
+              function(localMediaStream) {
+                  video = document.querySelector('video');
+                 video.src = window.URL.createObjectURL(localMediaStream);
+                 webcamStream = localMediaStream;
+              },
+
+              // errorCallback
+              function(err) {
+                 console.log("The following error occured: " + err);
+              }
+           );
+        } else {
+           console.log("getUserMedia not supported");
+        }  
+      }
+
+      function stopWebcam() {
+          webcamStream.stop();
+      }
+      //---------------------
+      // TAKE A SNAPSHOT CODE
+      //---------------------
+      var canvas, ctx;
+
+      function init() {
+        // Get the canvas and obtain a context for
+        // drawing in it
+        canvas = document.getElementById("myCanvas");
+        ctx = canvas.getContext('2d');
+        			$("#osnap").hide();
+			      	$("#load").hide();
+			      	$("#osub").hide();
+			      	$("#gen").hide();
+			      	$("#textArea").hide();
+
+      }
+
+      function snapshot() {
+      	$("#snap").hide();
+      	$("#osnap").show();
+      	$("#load").show();
+      	$("#textArea").hide();
+         // Draws current image from the video element into the canvas
+        ctx.drawImage(video, 0,0, canvas.width, canvas.height);
+        var Pic = document.getElementById("myCanvas").toDataURL("image/png");
+        Pic = Pic.replace(/^data:image\/(png|jpg);base64,/, "");
+        //Pic = Pic.replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+        
+         // Sending the image data to Servers
+       $.ajax({
+        type: 'POST',
+        url: 'addface',
+        data: '{ "imageData" : "' + Pic + '" }',
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        success: function (xhr) {
+           alert("Done, snapshot processed.");
+           console.log(xhr['name'])
+           if (xhr['name']=="NULL"){
+           	$("#textArea").show();
+             document.getElementById("textArea").value = "No face detected";
+                   	$("#snap").show();
+			      	$("#osnap").hide();
+			      	$("#load").hide();
+           }else if (xhr['name']=="unidentified"){
+           	$("#textArea").show();
+             document.getElementById("textArea").value = "Welcome to Kotak, Kindly register";
+             //console.log('testing')
+             $("#form1").show();
+                    $("#snap").show();
+			      	$("#osnap").hide();
+			      	$("#load").hide();
+
+           }else {
+           	$("#textArea").show();
+             document.getElementById("textArea").value = 'Hi, '+ xhr['name'];
+                    $("#snap").show();
+			      	$("#osnap").hide();
+			      	$("#load").hide();
+
+           }
+      
+           // console.log(error)
+           // console.log(status)
+           // console.log(error)
+           // console.log(xhr.responseText.value);
+           //console.log("asda" + data);
+ 
+       },
+
+        error: function(xhr, status, error) {
+			  //var err = eval("(" + xhr.responseText + ")");
+			  //alert(error);
+			   alert("Unable to process to server");
+			         $("#snap").show();
+			      	$("#osnap").hide();
+			      	$("#load").hide();
+			  console.log(xhr);
+			  console.log(status);
+			  console.log(error);
+			   
+			}
+    
+       });
+      }
+      function sendData(){
+                    $("#osub").show();
+			      	$("#sub").hide();
+			      	$("#load").show();
+			      	$("#textArea").hide();
+      console.log("sending data");
+      var name = $("#name").val();
+      $("#form1").hide();
+      $("#form1").value = " ";
+      
+       //sending name data
+      $.ajax({
+       type: 'POST',
+       url: 'reguser',
+       data: '{ "reg_name" : "' + name + '" }',
+       contentType: 'application/json; charset=utf-8',
+       dataType: 'json',
+       success: function (msg) {
+           // alert("Done, data Uploaded.");
+           console.log(msg);
+           $("#textArea").show();
+           document.getElementById("textArea").value = "You have been registered";
+			      	
+			      	$("#load").hide();
+           //console.log("asda" + data);
+ 
+       },
+        error: function(xhr, status, error) {
+			  //var err = eval("(" + xhr.responseText + ")");
+			  //alert(error);
+			  console.log(xhr);
+			  console.log(status);
+			  console.log(error);
+			  alert("Unable to connect to server");
+			  $("#load").hide();
+			  //$("#form1").show();
+			}
+    
+       });
+      }
+
+
+
+  </script>
+  <div class="jumbotron jumbotron-fluid">
+  <div class="container">
+    <h2 class="display-3">Visitor Management System | Kotak </h2>
+    <p class="lead"> Connect yourself to online portal and get identified. </p>
+  </div>
+</div>
+
+
+   
+   
+
+
+  
+      <div class="container-fluid">
+    <div class="row">
+        <div  class="col-lg-7">
+              <video onclick="snapshot(this);" width=700 height=500 id="video" float="left" controls autoplay></video>
+        </div>
+        <div class="col-lg-5">
+        	<!--https://media1.tenor.com/images/556e9ff845b7dd0c62dcdbbb00babb4b/tenor.gif?itemid=5300368  -->
+         <div class="row" style="height:61px;"><img class="img-responsive" src="https://banksdirect.in/images/kotak-bank-logo.png" alt="Kotak" width=60 height=60> <h1 class="text-light" style="width:200; height:90px;"> &nbsp; Kotak Bank </h1> </div>
+             
+         <hr class="hr-primary" />
+    <button type="button" class="btn btn-primary" onclick="startWebcam();">Start WebCam</button>
+       <button id="snap" type="button" class="btn btn-success" onclick="snapshot();">Take Snapshot</button>  <button id="osnap" type="button" class="btn btn-success" disabled>Take Snapshot</button> <div id="load"><img class="img-responsive" src="https://www.vivo.com/themes/custom/vivo/img/loader.gif" alt="Kotak", width=200> </div>
+       <br>
+        <hr class="hr-primary" />
+        <textarea id="textArea"></textarea>
+         <hr class="hr-primary" />
+        <form id="form1" class="form-group">
+           <p class="text-light bg-dark">Enter your name</p> <input id="name" type="text">
+             <button type="button" id="sub" class="btn btn-info" onclick="sendData();">Submit</button>
+             <button type="button" id="osub" class="btn btn-info" onclick="sendData();">Submit</button>
+        </form>
+    
+
+        </div>
+    </div>
+</div>
+<br>
+<hr class="hr-primary" />
+
+<div id="gen" class="col-lg-7">
+<p> 
+
+        Last snapshot captured for processing: </p>
+      <canvas  id="myCanvas" width="800" height="500"></canvas> 
+</div>
+  </body>
+  
+</html>
